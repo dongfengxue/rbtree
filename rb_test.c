@@ -39,13 +39,38 @@ void print_node ( struct rbtree_node *root, int level )
         print_node ( root->left, level + 1 );
     }
 }
+void print_laddr_node(struct rbtree_node *root,int level)
+{
+    if ( root == NULL )
+    {
+        padding ( '\t', level );
+        puts ( "NIL" );
 
+    }
+    else
+    {
+        print_laddr_node ( root->right, level + 1 );
+        padding ( '\t', level );
+        if(root->color == RB_BLACK)
+        {
+            //printf ( "(%llu)\n", *(ULL*)(root->key) );
+            printf("key:(%llu) (%d) (%s)\n",*(ULL *)(root->key),(root->ref),(root->data));
+        }
+        else
+            //    printf ( "%llu\n",*(ULL*)(root->key) );
+            printf("key:%llu (%d) (%s)\n",*(ULL *)(root->key),(root->ref),(root->data));
+        print_laddr_node ( root->left, level + 1 );
+    }
+}
 void print_tree(struct rbtree* tree)
 {
     print_node(tree->root,0);
     printf("-------------------------------------------\n");
 }
-
+void print_laddr_tree(struct rbtree * tree){
+    print_laddr_node(tree->root,0);
+    printf("--------------------------------------------\n");
+}
 int compare(void* key_a,void* key_b)
 {
     ULL key_a_real = *(ULL*) (key_a);
@@ -118,11 +143,24 @@ int tree2dot(struct rbtree* tree,char* filename)
 }
 int main()
 {
-    struct rbtree* tree = rbtree_init(compare);
-    int ret = 0;
-    if(tree == NULL)
+    struct rbtree* hash_tree = rbtree_init(compare);         //hash tree
+    struct rbtree* laddr_tree = rbtree_init(compare);   // laddr tree
+    struct rbtree* paddr_tree = rbtree_init(compare);      //paddr tree
+    int ret_hash = 0;
+    int ret_laddr=0;
+    int ret_paddr=0;
+
+    if(hash_tree == NULL)
     {
         fprintf(stderr,"malloc tree failed\n");
+        return -1;
+    }
+    if(laddr_tree == NULL){
+        fprintf(stderr,"mallloc laddr_tree faild\n");
+        return -1;
+    }
+    if(paddr_tree == NULL){
+        fprintf(stderr,"malloc paddr_tree faild\n");
         return -1;
     }
 
@@ -170,6 +208,7 @@ int main()
         fprintf(stderr,"malloc laddr failed\n");
         return -1;
     }
+    void * tmp;
     while(fgets(line,200,fp))
     {
         // printf("strlen is %d\n", strlen(line));
@@ -181,15 +220,30 @@ int main()
         hash[32] ='\0';
         printf("hash:%s\n",hash);
         printf("addr:%llu\n",laddr[i]);
-        ret  = rbtree_insert(tree,hash,&laddr[i]);        //-1 mean alloc node failed,
-        //-2 mean existed node with same key
-        void * data = rbtree_lookup(tree,hash);
-        if(ret == 0)
-        	  assert(data == &laddr[i]);
-        i++;
-    }
-    print_tree(tree);
+        //printf("addr:%x\n",&laddr[i]);
+        ret_laddr = rbtree_insert(laddr_tree,&laddr[i],hash);
+        ret_hash  = rbtree_insert(hash_tree,hash,&laddr[i]);        //-1 mean alloc node failed,key is the hash
+                                                                     //-2 mean existed node with same key
+       // printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+       // printf("hash:%s\n",hash);
+       // printf("addr:%llu\n",laddr[i]);
+       // ret_laddr = rbtree_insert(laddr_tree,&laddr[i],hash);  //laddr is the key
 
+      //  void * data = rbtree_lookup(hash_tree,hash);
+     //   if(ret_hash == 0)
+     //   	  assert(data == &laddr[i]);
+        void *data =rbtree_lookup(laddr_tree,&laddr[i]);
+        if(ret_laddr == 0)
+   //             assert(data == hash);
+        i++;
+        tmp=hash;
+    }
+    print_tree(hash_tree);
+
+    printf("############################################################\n");
+  //  print_laddr_tree(laddr_tree);
+   // rbtree_remove(hash_tree,tmp);
+    print_laddr_tree(laddr_tree);
     return 0;
 }
 

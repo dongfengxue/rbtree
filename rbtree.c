@@ -146,7 +146,7 @@ struct rbtree_node* rbtree_createnode(void *key, void* data)
 
     newnode->key = key;
     newnode->data = data;
-//	printf("(%lld)\n",*(long long *)(newnode->data));
+	//printf("(%llu)\n",*(unsigned long long  *)(newnode->key));
 	newnode->ref = 1 ;
     newnode->parent = NULL;
     newnode->left = NULL;
@@ -165,7 +165,7 @@ static inline int compare(void* key_a,void* key_b)
         return -1;
 }
 */
-struct rbtree_node* do_lookup(void* key,
+struct rbtree_node* do_lookup(void* key,                   //查看当前节点是否有重复数据，如果有ref++
         struct rbtree* tree,
         struct rbtree_node** pparent)
 {
@@ -193,12 +193,39 @@ struct rbtree_node* do_lookup(void* key,
     return NULL;
 
 }
+struct rbtree_node* rbtree_do_lookup(void* key,                   //在树中根据key查找，找到返回该节点
+                              struct rbtree* tree,
+                              struct rbtree_node** pparent)
+{
+    struct rbtree_node *current = tree->root;
 
-void*  rbtree_lookup(struct rbtree* tree,void* key)
+    while(current) {
+        int ret = tree->compare(current->key, key);
+        if (ret == 0)
+        {
+            return current;
+        }
+        else
+        {
+            if(pparent != NULL)
+            {
+                *pparent = current;
+            }
+            if (ret < 0 )
+                current = current->right;
+            else
+                current = current->left;
+        }
+    }
+    return NULL;
+
+}
+
+void*  rbtree_lookup(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
 {
     assert(tree != NULL) ;
     struct rbtree_node* node;
-    node = do_lookup(key,tree,NULL);
+    node = rbtree_do_lookup(key,tree,NULL);
     return node == NULL ?NULL:node->data;
 }
 

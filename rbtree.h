@@ -6,16 +6,20 @@ enum rb_color
     RB_BLACK,
     RB_RED,
 };
-
+struct l_addr{
+    long long laddr;
+    struct l_addr *next;   //logical address
+};
 typedef struct rbtree_node
 {
     struct rbtree_node* parent;
     struct rbtree_node* left;
     struct rbtree_node* right;
     enum rb_color color;
-    void*  key;
+    void *key;
     void *data;
     int ref;
+    struct l_addr* addr;
 }rbtree_node;
 
 typedef int (*rbtree_cmp_fn_t)(void *key_a,  void *key_b);
