@@ -147,13 +147,39 @@ struct rbtree_node* rbtree_createnode(void *key, void* data)
     newnode->key = key;
     newnode->data = data;
 	//printf("(%llu)\n",*(unsigned long long  *)(newnode->key));
-	newnode->ref = 1 ;
+	//newnode->ref = 1 ;
     newnode->parent = NULL;
     newnode->left = NULL;
     newnode->right = NULL;
     return newnode;
 }
+struct rbtree_node* rbtree_creat_datanode(void *laddr,long long paddr,void* hash)
+{
+    struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
+    struct data_node *tmp_data_node=NULL;
+    struct l_addr *tmp_laddr=NULL;
 
+    tmp_laddr=(struct l_addr *)malloc(sizeof(struct l_addr));
+    tmp_laddr->laddr= *(long long *)laddr;
+    tmp_laddr->next=NULL;
+    tmp_data_node=(struct data_node *)malloc(sizeof(struct data_node));
+    tmp_data_node->head_laddr = tmp_laddr;
+    tmp_data_node->paddr= paddr;
+    tmp_data_node->hash = hash;
+ //   strcpy(tmp_data_node->hash,hash);
+    tmp_data_node->ref=1;
+    if(newnode == NULL)
+        return NULL;
+
+    newnode->key = NULL;
+    newnode->data = tmp_data_node;
+    //printf("(%llu)\n",*(unsigned long long  *)(newnode->key));
+    //newnode->ref = 1 ;
+    newnode->parent = NULL;
+    newnode->left = NULL;
+    newnode->right = NULL;
+    return newnode;
+}
 /*
 static inline int compare(void* key_a,void* key_b)
 {
@@ -175,7 +201,7 @@ struct rbtree_node* do_lookup(void* key,                   //查看当前节点�
         int ret = tree->compare(current->key, key);
         if (ret == 0)
         {
-        current->ref ++;
+        current->data->ref ++;
         return current;
         }
         else
@@ -306,10 +332,17 @@ struct rbtree* rbtree_init(rbtree_cmp_fn_t compare)
     
     return tree;
 }
-struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree)
+struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree,int flag)
 {
     struct rbtree_node* samenode=NULL;
     struct rbtree_node*parent=NULL;
+
+    if(flag ==0)
+        node->key = node->data->hash;
+    else if(flag ==1)
+        node->key = node->data->head_laddr;
+    else if(flag ==2)
+        node->key = &(node->data->paddr);
 
     samenode = do_lookup(node->key,tree,&parent);
     if(samenode != NULL)
@@ -384,14 +417,15 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     return NULL;
 }
 
-int  rbtree_insert(struct rbtree *tree, void*  key,void* data)
+int  rbtree_insert(struct rbtree *tree, struct rbtree_node *node,void*  key,void* data,int flag)
+//int  rbtree_insert(struct rbtree *tree,void*  key,void* data)
 {
-    struct rbtree_node * node = rbtree_createnode(key,data);
+   // struct rbtree_node * node = rbtree_createnode(key,data);
     struct rbtree_node* samenode = NULL;
     if(node == NULL)
         return -1;
     else
-        samenode = __rbtree_insert(node,tree);
+        samenode = __rbtree_insert(node,tree,flag);
     if(samenode != NULL)
         return -2;
     return 0;
