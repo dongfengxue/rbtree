@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<assert.h>
+#include<string.h>
 
 void delete_case1(struct rbtree* tree,struct rbtree_node* node);
 void delete_case2(struct rbtree* tree,struct rbtree_node* node);
@@ -10,6 +11,21 @@ void delete_case4(struct rbtree* tree,struct rbtree_node* node);
 void delete_case5(struct rbtree* tree,struct rbtree_node* node);
 void delete_case6(struct rbtree* tree,struct rbtree_node* node);
 
+int compare_addr(unsigned long long key_a,unsigned long long key_b)
+{
+
+    if(key_a > key_b)
+    {
+        return 1;
+    }
+    else if(key_a == key_b)
+    {
+        return 0;
+    }
+    else
+        return -1;
+
+}
 static inline enum rb_color get_color(struct rbtree_node* node)
 {
     if(node == NULL)
@@ -153,7 +169,7 @@ struct rbtree_node* rbtree_createnode(void *key, void* data)
     newnode->right = NULL;
     return newnode;
 }
-struct data_node* rbtree_create_datanode(unsigned long long laddr,unsigned long long paddr,void* hash)
+struct data_node* rbtree_create_datanode(unsigned long long laddr,unsigned long long paddr,char hash[])
 {
     // struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
     struct data_node *tmp_data_node=NULL;
@@ -165,7 +181,8 @@ struct data_node* rbtree_create_datanode(unsigned long long laddr,unsigned long 
     tmp_data_node=(struct data_node *)malloc(sizeof(struct data_node));
     tmp_data_node->head_laddr = tmp_laddr;
     tmp_data_node->paddr= paddr;
-    tmp_data_node->hash = hash;
+    strcpy(tmp_data_node->hash,hash);
+ //   tmp_data_node->hash = hash;
     //   strcpy(tmp_data_node->hash,hash);
     tmp_data_node->ref=1;
 
@@ -254,6 +271,92 @@ struct rbtree_node* do_lookup(void* key,                   //查看当前节点�
     return NULL;
 
 }
+struct rbtree_node* do_lookup_hash(char key[],                   //查看当前节点是否有重复数据，如果有ref++
+                              struct rbtree* tree,
+                              struct rbtree_node** pparent)
+{
+    struct rbtree_node *current = tree->root;
+
+    while(current) {
+        int ret = tree->compare(current->data->hash, key);
+        if (ret == 0)
+        {
+            current->data->ref ++;
+            return current;
+        }
+        else
+        {
+            if(pparent != NULL)
+            {
+                *pparent = current;
+            }
+            if (ret < 0 )
+                current = current->right;
+            else
+                current = current->left;
+        }
+    }
+    return NULL;
+
+}
+struct rbtree_node* do_lookup_laddr(unsigned long long key,                   //查看当前节点是否有重复数据，如果有ref++
+                                   struct rbtree* tree,
+                                   struct rbtree_node** pparent)
+{
+    struct rbtree_node *current = tree->root;
+
+    while(current) {
+      //  int ret = tree->compare_addr(current->data->head_laddr->laddr, key);
+        int ret = compare_addr(current->data->head_laddr->laddr,key);
+        if (ret == 0)
+        {
+            current->data->ref ++;
+            return current;
+        }
+        else
+        {
+            if(pparent != NULL)
+            {
+                *pparent = current;
+            }
+            if (ret < 0 )
+                current = current->right;
+            else
+                current = current->left;
+        }
+    }
+    return NULL;
+
+}
+struct rbtree_node* do_lookup_paddr(unsigned long long key,                   //查看当前节点是否有重复数据，如果有ref++
+                                   struct rbtree* tree,
+                                   struct rbtree_node** pparent)
+{
+    struct rbtree_node *current = tree->root;
+
+    while(current) {
+        //  int ret = tree->compare_addr(current->data->head_laddr->laddr, key);
+        int ret = compare_addr(current->data->paddr,key);
+        if (ret == 0)
+        {
+            current->data->ref ++;
+            return current;
+        }
+        else
+        {
+            if(pparent != NULL)
+            {
+                *pparent = current;
+            }
+            if (ret < 0 )
+                current = current->right;
+            else
+                current = current->left;
+        }
+    }
+    return NULL;
+
+}
 struct rbtree_node* rbtree_do_lookup(void* key,                   //在树中根据key查找，找到返回该节点
                               struct rbtree* tree,
                               struct rbtree_node** pparent)
@@ -281,7 +384,34 @@ struct rbtree_node* rbtree_do_lookup(void* key,                   //在树中根
     return NULL;
 
 }
+struct rbtree_node* rbtree_do_lookup_laddr(unsigned long long key,                   //在树中根据key查找，找到返回该节点
+                                     struct rbtree* tree,
+                                     struct rbtree_node** pparent)
+{
+    struct rbtree_node *current = tree->root;
 
+    while(current) {
+    //    int ret = compare(current->data->head_laddr->laddr, key);
+        int ret = compare_addr(current->data->head_laddr->laddr,key);
+        if (ret == 0)
+        {
+            return current;
+        }
+        else
+        {
+            if(pparent != NULL)
+            {
+                *pparent = current;
+            }
+            if (ret < 0 )
+                current = current->right;
+            else
+                current = current->left;
+        }
+    }
+    return NULL;
+
+}
 void*  rbtree_lookup(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
 {
     assert(tree != NULL) ;
@@ -289,18 +419,18 @@ void*  rbtree_lookup(struct rbtree* tree,void* key)             //根据key查�
     node = rbtree_do_lookup(key,tree,NULL);
     return node == NULL ?NULL:node->data->hash;
 }
-void*  rbtree_lookup_hash(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
+void*  rbtree_lookup_hash(struct rbtree* tree,char key[])             //根据key查找data值，找到返回data
 {
     assert(tree != NULL) ;
     struct rbtree_node* node;
     node = rbtree_do_lookup(key,tree,NULL);
     return node == NULL ?NULL:node->data->hash;
 }
-void*  rbtree_lookup_laddr(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
+void*  rbtree_lookup_laddr(struct rbtree* tree, unsigned long long key)             //根据key查找data值，找到返回data
 {
     assert(tree != NULL) ;
     struct rbtree_node* node;
-    node = rbtree_do_lookup(key,tree,NULL);
+    node = rbtree_do_lookup_laddr(key,tree,NULL);
     return node == NULL ?NULL:&(node->data->head_laddr->laddr);
 }
 void*  rbtree_lookup_paddr(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
@@ -381,8 +511,23 @@ struct rbtree* rbtree_init(rbtree_cmp_fn_t compare)
     {
         tree->root = NULL;
         tree->compare = compare;
+     //   tree->compare_addr = NULL;
     }
     
+    return tree;
+}
+struct rbtree* rbtree_init_addr(rbtree_cmp_addr compare_addr)
+{
+    struct rbtree* tree = malloc(sizeof(struct rbtree));
+    if(tree == NULL)
+        return NULL;
+    else
+    {
+        tree->root = NULL;
+        tree->compare = NULL;
+      //  tree->compare_addr = compare_addr;
+    }
+
     return tree;
 }
 struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree,int flag)
@@ -469,31 +614,198 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     set_color(RB_BLACK,tree->root);
     return NULL;
 }
+struct rbtree_node* __rbtree_insert_hash(struct rbtree_node* node,struct rbtree *tree,int flag)
+{
+    struct rbtree_node* samenode=NULL;
+    struct rbtree_node*parent=NULL;
 
+    node->key=node->data->hash;
+    samenode = do_lookup_hash(node->data->hash,tree,&parent);
+    if(samenode != NULL)
+        return samenode;
+
+    node->left = node->right = NULL;
+    set_color(RB_RED,node);
+    set_parent(parent,node);
+
+    if(parent == NULL)
+        tree->root = node;
+    else
+    {
+        set_child(tree,parent,node);
+    }
+
+    while((parent = get_parent(node)) != NULL && parent->color == RB_RED)
+    {
+        struct rbtree_node* grandpa = get_parent(parent);//grandpa must be existed
+        //because root is black ,and parent is red,
+        //parent can not be root of tree. and parent is red,so grandpa must be black
+        if(parent == grandpa->left)
+        {
+            struct rbtree_node* uncle = grandpa->right;
+            if(uncle && get_color(uncle) == RB_RED)
+            {
+                set_color(RB_RED,grandpa);
+                set_color(RB_BLACK,parent);
+                set_color(RB_BLACK,uncle);
+                node = grandpa;
+            }
+            else
+            {
+                if(node == parent->right )
+                {
+                    rotate_left(parent,tree);
+                    node = parent;
+                    parent = get_parent(parent);
+                }
+                set_color(RB_BLACK,parent);
+                set_color(RB_RED,grandpa);
+                rotate_right(grandpa,tree);
+            }
+
+        }
+        else
+        {
+            struct rbtree_node* uncle = grandpa->left;
+            if(uncle && uncle->color == RB_RED)
+            {
+                set_color(RB_RED,grandpa);
+                set_color(RB_BLACK,parent);
+                set_color(RB_BLACK,uncle);
+                node = grandpa;
+            }
+            else
+            {
+                if(node == parent->left)
+                {
+                    rotate_right(parent,tree);
+                    node = parent;
+                    parent = get_parent(node);
+                }
+                set_color(RB_BLACK, parent);
+                set_color(RB_RED, grandpa);
+                rotate_left(grandpa, tree);
+            }
+        }
+    }
+
+    set_color(RB_BLACK,tree->root);
+    return NULL;
+}
+struct rbtree_node* __rbtree_insert_laddr(struct rbtree_node* node,struct rbtree *tree,int flag)
+{
+    struct rbtree_node* samenode=NULL;
+    struct rbtree_node*parent=NULL;
+
+    node->key=&(node->data->head_laddr->laddr);
+    samenode = do_lookup_laddr(node->data->head_laddr->laddr,tree,&parent);
+    if(samenode != NULL)
+        return samenode;
+
+    node->left = node->right = NULL;
+    set_color(RB_RED,node);
+    set_parent(parent,node);
+
+    if(parent == NULL)
+        tree->root = node;
+    else
+    {
+        set_child(tree,parent,node);
+    }
+
+    while((parent = get_parent(node)) != NULL && parent->color == RB_RED)
+    {
+        struct rbtree_node* grandpa = get_parent(parent);//grandpa must be existed
+        //because root is black ,and parent is red,
+        //parent can not be root of tree. and parent is red,so grandpa must be black
+        if(parent == grandpa->left)
+        {
+            struct rbtree_node* uncle = grandpa->right;
+            if(uncle && get_color(uncle) == RB_RED)
+            {
+                set_color(RB_RED,grandpa);
+                set_color(RB_BLACK,parent);
+                set_color(RB_BLACK,uncle);
+                node = grandpa;
+            }
+            else
+            {
+                if(node == parent->right )
+                {
+                    rotate_left(parent,tree);
+                    node = parent;
+                    parent = get_parent(parent);
+                }
+                set_color(RB_BLACK,parent);
+                set_color(RB_RED,grandpa);
+                rotate_right(grandpa,tree);
+            }
+
+        }
+        else
+        {
+            struct rbtree_node* uncle = grandpa->left;
+            if(uncle && uncle->color == RB_RED)
+            {
+                set_color(RB_RED,grandpa);
+                set_color(RB_BLACK,parent);
+                set_color(RB_BLACK,uncle);
+                node = grandpa;
+            }
+            else
+            {
+                if(node == parent->left)
+                {
+                    rotate_right(parent,tree);
+                    node = parent;
+                    parent = get_parent(node);
+                }
+                set_color(RB_BLACK, parent);
+                set_color(RB_RED, grandpa);
+                rotate_left(grandpa, tree);
+            }
+        }
+    }
+
+    set_color(RB_BLACK,tree->root);
+    return NULL;
+}
 int  rbtree_insert(struct rbtree *tree, struct rbtree_node *node,int flag)
-//int  rbtree_insert(struct rbtree *tree,void*  key,void* data)
 {
    // struct rbtree_node * node = rbtree_createnode(key,data);
     struct rbtree_node* samenode = NULL;
     if(node == NULL)
         return -1;
     else
-    /*{
-        if (flag == 0)
-            samenode = __rbtree_insert_hash(node, tree, flag);
-        else if (flag == 1)
-            samenode = __rbtree_insert_laddr(node, tree, flag);
-        else if (flag == 2)
-            samenode = __rbtree_insert_paddr(node, tree, flag);
-    }
-     */
         samenode = __rbtree_insert(node,tree,flag);
     if(samenode != NULL)
         return -2;
     return 0;
 }
-
-
+int  rbtree_insert_hash(struct rbtree *tree, struct rbtree_node *node,int flag)
+{
+    // struct rbtree_node * node = rbtree_createnode(key,data);
+    struct rbtree_node* samenode = NULL;
+    if(node == NULL)
+        return -1;
+    else
+        samenode = __rbtree_insert_hash(node,tree,flag);
+    if(samenode != NULL)
+        return -2;
+    return 0;
+}
+int  rbtree_insert_laddr(struct rbtree *tree, struct rbtree_node *node,int flag)
+{
+    // struct rbtree_node * node = rbtree_createnode(key,data);
+    struct rbtree_node* samenode = NULL;
+    if(node == NULL)
+        return -1;
+    else
+        samenode = __rbtree_insert_laddr(node,tree,flag);
+    if(samenode != NULL)
+        return -2;
+    return 0;
+}
 void replace_node(struct rbtree* t, rbtree_node *oldn, rbtree_node* newn) 
 {
     if (oldn->parent == NULL)
@@ -639,6 +951,58 @@ void __rbtree_remove(struct rbtree_node* node,struct rbtree* tree)
 int  rbtree_remove(struct rbtree* tree,void *key)
 {
     struct rbtree_node* node = do_lookup(key,tree,NULL);
+    if(node == NULL)
+        return -1;
+    else
+        __rbtree_remove(node,tree);
+    return 0;
+}
+void __rbtree_remove_hash(struct rbtree_node* node,struct rbtree* tree)
+{
+    struct rbtree_node *left = node->left;
+    struct rbtree_node* right = node->right;
+    struct rbtree_node* child = NULL;
+    if(left != NULL && right != NULL )
+    {
+        struct rbtree_node* next = get_min(right);
+        node->key = next->key;
+        node->data = next->data;
+        node = next;
+    }
+
+    assert(node->left == NULL || node->right == NULL);
+    child = (node->right == NULL ? node->left : node->right);
+    if(get_color(node) == RB_BLACK)
+    {
+        set_color(get_color(child),node);
+        delete_case1(tree,node);
+    }
+    replace_node(tree,node,child);
+    if(node->parent == NULL && child != NULL)//node is root,root should be black
+        set_color(RB_BLACK,child);
+    free(node);
+}
+int  rbtree_remove_hash(struct rbtree* tree,char key[])
+{
+    struct rbtree_node* node = do_lookup_hash(key,tree,NULL);
+    if(node == NULL)
+        return -1;
+    else
+        __rbtree_remove(node,tree);
+    return 0;
+}
+int rbtree_remove_laddr(struct rbtree* tree, unsigned long long key)
+{
+    struct rbtree_node* node = do_lookup_laddr(key,tree,NULL);
+    if(node == NULL)
+        return -1;
+    else
+        __rbtree_remove(node,tree);
+    return 0;
+}
+int rbtree_remove_paddr(struct rbtree* tree, unsigned long long key)
+{
+    struct rbtree_node* node = do_lookup_paddr(key,tree,NULL);
     if(node == NULL)
         return -1;
     else

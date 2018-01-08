@@ -115,8 +115,8 @@ int compare(void* key_a,void* key_b)
     }
     else
         return -1;
-
 }
+
 
 void  process_null_node(struct rbtree_node* node, int nullcount, FILE* stream)
 {
@@ -195,7 +195,6 @@ int main()
     }
 
     char str[30];
-    //scanf("%s",str);
     strcpy(str,"lhj.txt");
     FILE *fp = fopen(str,"r");
     char line[200];
@@ -212,9 +211,8 @@ int main()
         fprintf(stderr,"malloc laddr failed\n");
         return -1;
     }
-    void * tmp,*tmp1,*tmp2;
+
     int flag=0;      //flag=0,hash is the key;flag=1,laddr is the key;flag=2,paddr is the key;
-   // struct rbtree_node *data_tmp=NULL;
     struct data_node *data_tmp=NULL;
     struct rbtree_node *node =NULL;
     while(fgets(line,200,fp))
@@ -228,25 +226,25 @@ int main()
         hash[32] ='\0';
         printf("hash:%s\n",hash);
         printf("addr:%llu\n",laddr[i]);
-        //printf("addr:%x\n",&laddr[i]);
-       // struct rbtree_node * node = rbtree_createnode(hash,&laddr[i]);
-      //  ret_laddr = rbtree_insert(laddr_tree,&laddr[i],hash);
+
         data_tmp = rbtree_create_datanode(laddr[i],i,hash);
 
         struct rbtree_node *hash_node=NULL;
-        hash_node = rbtree_create_rbtreenode(data_tmp);
-        ret_hash  = rbtree_insert(hash_tree,hash_node,flag);        //-1 mean alloc node failed,key is the hash
-        void *data_hash=rbtree_lookup_hash(hash_tree,hash);
+        hash_node = rbtree_create_rbtreenode(data_tmp);          //创建hash node
+        ret_hash  = rbtree_insert_hash(hash_tree,hash_node,flag);        //-1 mean alloc node failed,key is the hash
+        void *data_hash = rbtree_lookup_hash(hash_tree,hash);
         if(ret_hash == 0)
-           	  assert(data_hash == hash);
+        {
+            printf("%s  hash:%s\n", data_hash, hash);
+            assert(strcmp(data_hash,hash)==0);
+        }
 
         struct rbtree_node *laddr_node =NULL;
-        laddr_node = rbtree_create_rbtreenode(data_tmp);
-        ret_laddr =rbtree_insert(laddr_tree,laddr_node,1);
-        void *data_laddr=rbtree_lookup_laddr(laddr_tree,&laddr[i]);
+        laddr_node = rbtree_create_rbtreenode(data_tmp);          //创建laddr node
+        ret_laddr = rbtree_insert_laddr(laddr_tree,laddr_node,1);
+        void *data_laddr = rbtree_lookup_laddr(laddr_tree,laddr[i]);
         if(ret_laddr == 0)
-         //   printf("data_laddr:%llu  laddr[i]:%llu\n",*(ULL*)data_laddr,laddr[i]);
-            assert(*(ULL *)data_laddr == (laddr[i]));
+              assert(*(ULL *)data_laddr == (laddr[i]));
 
         struct rbtree_node *paddr_node =NULL;
         paddr_node = rbtree_create_rbtreenode(data_tmp);
@@ -256,24 +254,27 @@ int main()
             assert(*(ULL *)data_paddr == (i));
 
         i++;
-
-        tmp=hash;
-        tmp1=data_laddr;
-        tmp2=data_paddr;
-
     }
+
     print_tree(hash_tree);
     printf("\n");
-    print_laddr_tree(laddr_tree);
-    printf("############################################################\n");
-
-    print_paddr_tree(paddr_tree);
-  //  print_laddr_tree(laddr_tree);
+    char tmp[33];
+    strcpy(tmp,"0d63e2242fecfe1ea57e95dc1b3a8f79");
     rbtree_remove(hash_tree,tmp);
     print_tree(hash_tree);
 
-    rbtree_remove(laddr_tree,tmp1);
+    printf("############################################################\n");
     print_laddr_tree(laddr_tree);
+    rbtree_remove_laddr(laddr_tree,49088240);
+    print_laddr_tree(laddr_tree);
+
+
+    printf("############################################################\n");
+    print_paddr_tree(paddr_tree);
+    rbtree_remove_paddr(paddr_tree,1);
+    print_paddr_tree(paddr_tree);
+
+
     return 0;
 }
 
