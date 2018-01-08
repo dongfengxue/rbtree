@@ -217,7 +217,6 @@ int main()
     struct rbtree_node *node =NULL;
     while(fgets(line,200,fp))
     {
-        // printf("strlen is %d\n", strlen(line));
         if (strlen(line) < 33)
             continue;
         sscanf(line,"%lf %c %lld %d",&b_tmie,&rw,&laddr[i],&b_size);
