@@ -153,14 +153,48 @@ struct rbtree_node* rbtree_createnode(void *key, void* data)
     newnode->right = NULL;
     return newnode;
 }
-struct rbtree_node* rbtree_creat_datanode(void *laddr,long long paddr,void* hash)
+struct data_node* rbtree_create_datanode(unsigned long long laddr,unsigned long long paddr,void* hash)
+{
+    // struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
+    struct data_node *tmp_data_node=NULL;
+    struct l_addr *tmp_laddr=NULL;
+
+    tmp_laddr=(struct l_addr *)malloc(sizeof(struct l_addr));
+    tmp_laddr->laddr= laddr;
+    tmp_laddr->next=NULL;
+    tmp_data_node=(struct data_node *)malloc(sizeof(struct data_node));
+    tmp_data_node->head_laddr = tmp_laddr;
+    tmp_data_node->paddr= paddr;
+    tmp_data_node->hash = hash;
+    //   strcpy(tmp_data_node->hash,hash);
+    tmp_data_node->ref=1;
+
+    return tmp_data_node;
+}
+struct rbtree_node* rbtree_create_rbtreenode(struct data_node* data)
+{
+    struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
+    if(newnode == NULL)
+        return NULL;
+
+    newnode->key = NULL;
+    newnode->data = data;
+    //printf("(%llu)\n",*(unsigned long long  *)(newnode->key));
+    //newnode->ref = 1 ;
+    newnode->parent = NULL;
+    newnode->left = NULL;
+    newnode->right = NULL;
+    return newnode;
+}
+/*
+struct rbtree_node* rbtree_creat_datanode(unsigned long long laddr,unsigned long long paddr,void* hash)
 {
     struct rbtree_node* newnode = malloc(sizeof(struct rbtree_node));
     struct data_node *tmp_data_node=NULL;
     struct l_addr *tmp_laddr=NULL;
 
     tmp_laddr=(struct l_addr *)malloc(sizeof(struct l_addr));
-    tmp_laddr->laddr= *(long long *)laddr;
+    tmp_laddr->laddr= laddr;
     tmp_laddr->next=NULL;
     tmp_data_node=(struct data_node *)malloc(sizeof(struct data_node));
     tmp_data_node->head_laddr = tmp_laddr;
@@ -180,6 +214,7 @@ struct rbtree_node* rbtree_creat_datanode(void *laddr,long long paddr,void* hash
     newnode->right = NULL;
     return newnode;
 }
+*/
 /*
 static inline int compare(void* key_a,void* key_b)
 {
@@ -252,9 +287,29 @@ void*  rbtree_lookup(struct rbtree* tree,void* key)             //根据key查�
     assert(tree != NULL) ;
     struct rbtree_node* node;
     node = rbtree_do_lookup(key,tree,NULL);
-    return node == NULL ?NULL:node->data;
+    return node == NULL ?NULL:node->data->hash;
 }
-
+void*  rbtree_lookup_hash(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
+{
+    assert(tree != NULL) ;
+    struct rbtree_node* node;
+    node = rbtree_do_lookup(key,tree,NULL);
+    return node == NULL ?NULL:node->data->hash;
+}
+void*  rbtree_lookup_laddr(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
+{
+    assert(tree != NULL) ;
+    struct rbtree_node* node;
+    node = rbtree_do_lookup(key,tree,NULL);
+    return node == NULL ?NULL:&(node->data->head_laddr->laddr);
+}
+void*  rbtree_lookup_paddr(struct rbtree* tree,void* key)             //根据key查找data值，找到返回data
+{
+    assert(tree != NULL) ;
+    struct rbtree_node* node;
+    node = rbtree_do_lookup(key,tree,NULL);
+    return node == NULL ?NULL:&(node->data->paddr);
+}
 static void set_child(struct rbtree* tree,struct rbtree_node* node,struct rbtree_node* child)
 {
     int ret = tree->compare(node->key,child->key);
@@ -317,8 +372,6 @@ static void rotate_right(struct rbtree_node *node, struct rbtree *tree)
     q->right = p;
 }
 
-
-
 struct rbtree* rbtree_init(rbtree_cmp_fn_t compare)
 {
     struct rbtree* tree = malloc(sizeof(struct rbtree));
@@ -337,11 +390,11 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     struct rbtree_node* samenode=NULL;
     struct rbtree_node*parent=NULL;
 
-    if(flag ==0)
+    if(flag == 0)
         node->key = node->data->hash;
-    else if(flag ==1)
-        node->key = node->data->head_laddr;
-    else if(flag ==2)
+    else if(flag == 1)
+        node->key = &(node->data->head_laddr->laddr);
+    else if(flag == 2)
         node->key = &(node->data->paddr);
 
     samenode = do_lookup(node->key,tree,&parent);
@@ -417,7 +470,7 @@ struct rbtree_node* __rbtree_insert(struct rbtree_node* node,struct rbtree *tree
     return NULL;
 }
 
-int  rbtree_insert(struct rbtree *tree, struct rbtree_node *node,void*  key,void* data,int flag)
+int  rbtree_insert(struct rbtree *tree, struct rbtree_node *node,int flag)
 //int  rbtree_insert(struct rbtree *tree,void*  key,void* data)
 {
    // struct rbtree_node * node = rbtree_createnode(key,data);
@@ -425,6 +478,15 @@ int  rbtree_insert(struct rbtree *tree, struct rbtree_node *node,void*  key,void
     if(node == NULL)
         return -1;
     else
+    /*{
+        if (flag == 0)
+            samenode = __rbtree_insert_hash(node, tree, flag);
+        else if (flag == 1)
+            samenode = __rbtree_insert_laddr(node, tree, flag);
+        else if (flag == 2)
+            samenode = __rbtree_insert_paddr(node, tree, flag);
+    }
+     */
         samenode = __rbtree_insert(node,tree,flag);
     if(samenode != NULL)
         return -2;
