@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/Administrator/CLionProjects/untitled1/main.c
+stdio.h
+-
+stdlib.h
+-
+rbtree.h
+C:/Users/Administrator/CLionProjects/untitled1/rbtree.h
+string.h
+C:/Users/Administrator/CLionProjects/untitled1/string.h
+
+C:/Users/Administrator/CLionProjects/untitled1/rbtree.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+rbtree.h
+C:/Users/Administrator/CLionProjects/untitled1/rbtree.h
+
+C:/Users/Administrator/CLionProjects/untitled1/rbtree.h
+
