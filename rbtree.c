@@ -61,9 +61,9 @@ static void inorder(RBTree tree)
     {
         inorder(tree->left);
         //printf("%d %d %d %s\n", tree->key->paddr,tree->key->laddr_l->laddr,tree->key->ref,tree->key->md);
-        printf("paddr:%d   ",tree->key->paddr);
+      //  printf("paddr:%d   ",tree->key->paddr);
         see_laddr_in_node(tree->key);
-        printf("  ref:%d ,hash:%s\n",tree->key->ref,tree->key->md);
+    //    printf("  ref:%d ,hash:%s\n",tree->key->ref,tree->key->md);
       //  ref_num++;
         if(tree->key->ref==1)
             ref_1_num++;
@@ -1041,7 +1041,7 @@ void see_laddr_in_node(struct data_node *data_tmp)
     struct laddr_list *laddr_l_tmp=NULL;
     laddr_l_tmp = data_tmp->laddr_l;
     while(laddr_l_tmp){
-        printf("-%d-",laddr_l_tmp->laddr);
+      //  printf("-%d-",laddr_l_tmp->laddr);
         laddr_l_tmp=laddr_l_tmp->next;
     }
 }
